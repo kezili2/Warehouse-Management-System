@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         version="4.0">
+
+  <!-- 字符过滤器：所有请求与响应统一 UTF-8 -->
+  <filter>
+    <filter-name>charset</filter-name>
+    <filter-class>com.warehouse.util.CharsetFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>charset</filter-name>
+    <url-pattern>/api/*</url-pattern>
+  </filter-mapping>
+
+  <servlet>
+    <servlet-name>LoginServlet</servlet-name>
+    <servlet-class>com.warehouse.servlet.LoginServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>LoginServlet</servlet-name>
+    <url-pattern>/api/login</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>UsersServlet</servlet-name>
+    <servlet-class>com.warehouse.servlet.UsersServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UsersServlet</servlet-name>
+    <url-pattern>/api/users</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>MaterialsServlet</servlet-name>
+    <servlet-class>com.warehouse.servlet.MaterialsServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>MaterialsServlet</servlet-name>
+    <url-pattern>/api/materials/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>BillServlet</servlet-name>
+    <servlet-class>com.warehouse.servlet.BillServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>BillServlet</servlet-name>
+    <url-pattern>/api/bill/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>InoutServlet</servlet-name>
+    <servlet-class>com.warehouse.servlet.InoutServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>InoutServlet</servlet-name>
+    <url-pattern>/api/inout/*</url-pattern>
+  </servlet-mapping>
+</web-app>
