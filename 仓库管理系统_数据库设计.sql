@@ -2,13 +2,16 @@
 --   仓库管理系统（客户机/服务器版） 数据库脚本
 --   课题3  ——  极简方案（3 张表 + 3 个存储过程）
 --   数据库：MySQL 8.0+，字符集 utf8mb4，存储引擎 InnoDB
---   提示：  实际使用时请把 `warehouse` 全局替换为你的"班级+座号"字符串。
+--   注意：排序规则统一用 MySQL 8 默认的 utf8mb4_0900_ai_ci。
+--   不要改成 utf8mb4_unicode_ci —— 存储过程参数继承库的排序规则，
+--   与表列不一致时会报 Illegal mix of collations。
+--   提示：实际使用时请把 `warehouse` 全局替换为你的"班级+座号"字符串。
 -- =====================================================================
 
 -- ---------- 0. 建库 ----------
 DROP DATABASE IF EXISTS `warehouse`;
 CREATE DATABASE `warehouse`
-  DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE `warehouse`;
 
 -- ============================================================
@@ -25,7 +28,7 @@ CREATE TABLE `warehouse_user` (
   PRIMARY KEY (id),
   UNIQUE KEY uk_user_code  (user_code),
   UNIQUE KEY uk_username   (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='人员档案 / 登录账号';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='人员档案 / 登录账号';
 
 -- ============================================================
 -- 2) 物料档案
@@ -42,7 +45,7 @@ CREATE TABLE `warehouse_material` (
   PRIMARY KEY (mat_code),
   KEY idx_mat_name (mat_name),
   KEY idx_mat_spec (spec)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物料档案';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='物料档案';
 
 -- ============================================================
 -- 3) 进出仓记录（1 张表方案）
@@ -67,7 +70,7 @@ CREATE TABLE `warehouse_inout` (
   KEY idx_io_bill  (bill_no),
   CONSTRAINT chk_io_type CHECK (io_type IN ('I','O')),
   CONSTRAINT chk_io_qty  CHECK (qty > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='进出仓记录';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='进出仓记录';
 
 -- ============================================================
 -- 初始化数据
@@ -188,7 +191,8 @@ END$$
 
 -- ----------------------------------------------------------
 -- C. 多物料进出仓
---    p_items 形如  [{"mat_code":"M0001","qty":2},{"mat_code":"M0002","qty":1}]
+--    p_items 形如  [{"matCode":"M0001","qty":2},{"matCode":"M0002","qty":1}]
+--    （注意：键名与服务端 toJsonArray 保持一致，用驼峰 matCode，不是 mat_code）
 --    同一单号只能同进或同出，任一物料失败 → 全部回滚
 -- ----------------------------------------------------------
 DROP PROCEDURE IF EXISTS `warehouse_sp_inout_multi`$$
@@ -220,7 +224,7 @@ BEGIN
   SELECT COUNT(*) INTO v_cnt
     FROM JSON_TABLE(
            p_items,
-           '$[*]' COLUMNS (mat_code VARCHAR(20) PATH '$.mat_code',
+           '$[*]' COLUMNS (mat_code VARCHAR(20) PATH '$.matCode',
                             qty      INT          PATH '$.qty')
          ) AS t;
   IF v_cnt = 0 THEN
@@ -231,7 +235,7 @@ BEGIN
   IF EXISTS(
        SELECT 1
          FROM JSON_TABLE(p_items, '$[*]'
-                         COLUMNS (mat_code VARCHAR(20) PATH '$.mat_code')) jt
+                         COLUMNS (mat_code VARCHAR(20) PATH '$.matCode')) jt
          LEFT JOIN `warehouse_material` m ON m.mat_code = jt.mat_code
         WHERE m.mat_code IS NULL) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '多物料失败：存在物料代码不存在';
@@ -242,7 +246,7 @@ BEGIN
     IF EXISTS(
          SELECT 1
            FROM JSON_TABLE(p_items, '$[*]'
-                           COLUMNS (mat_code VARCHAR(20) PATH '$.mat_code',
+                           COLUMNS (mat_code VARCHAR(20) PATH '$.matCode',
                                     qty      INT          PATH '$.qty')) jt
            JOIN `warehouse_material` m ON m.mat_code = jt.mat_code
           WHERE m.stock < jt.qty) THEN
@@ -254,7 +258,7 @@ BEGIN
   IF EXISTS(
        SELECT 1
          FROM JSON_TABLE(p_items, '$[*]'
-                         COLUMNS (mat_code VARCHAR(20) PATH '$.mat_code')) jt
+                         COLUMNS (mat_code VARCHAR(20) PATH '$.matCode')) jt
          JOIN `warehouse_inout` t ON t.bill_no = p_bill_no AND t.mat_code = jt.mat_code) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '多物料失败：单号下物料重复';
   END IF;
@@ -267,13 +271,13 @@ BEGIN
     SELECT p_bill_no, p_io_type, jt.mat_code, jt.qty,
            p_op_date, p_operator, p_handler, p_remark
       FROM JSON_TABLE(p_items, '$[*]'
-                      COLUMNS (mat_code VARCHAR(20) PATH '$.mat_code',
+                      COLUMNS (mat_code VARCHAR(20) PATH '$.matCode',
                                qty      INT          PATH '$.qty')) jt;
 
     -- 批量更新库存（进仓 +qty，出仓 -qty）
     UPDATE `warehouse_material` m
        JOIN JSON_TABLE(p_items, '$[*]'
-                       COLUMNS (mat_code VARCHAR(20) PATH '$.mat_code',
+                       COLUMNS (mat_code VARCHAR(20) PATH '$.matCode',
                                 qty      INT          PATH '$.qty')) jt
          ON m.mat_code = jt.mat_code
        SET m.stock = m.stock + IF(p_io_type='I', jt.qty, -jt.qty);
@@ -308,3 +312,14 @@ DELIMITER ;
 --   JSON_ARRAY(JSON_OBJECT('mat_code','M0001','qty',1),
 --              JSON_OBJECT('mat_code','M0002','qty',1)),
 --   CURDATE(),'U001','U002','批量出仓');
+
+
+USE warehouse;
+
+UPDATE warehouse_user
+SET real_name = '占泽华-施炜烨-涂遵伟',
+    address   = '软件工程2402'
+WHERE user_code = 'U001';
+
+-- 确认改成功（应看到你填的姓名和住址）
+SELECT user_code, username, real_name, address FROM warehouse_user WHERE user_code = 'U001';

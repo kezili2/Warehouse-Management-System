@@ -7,8 +7,8 @@
   <packaging>jar</packaging>
 
   <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <!-- 源码使用了 var（Java 10+）和 Map.of（Java 9+），编译级别必须是 11 及以上 -->
+    <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 

@@ -23,6 +23,11 @@ warehouse-client/
         └── MultiInoutPanel.java              子系统3：多物料进出仓
 ```
 
+## 环境要求
+
+- **JDK 11 及以上**（源码使用了 `var` 和 `Map.of`；pom.xml 中 `maven.compiler.release=11`）
+- Maven 3.6+
+
 ## 启动步骤
 
 ```bash
