@@ -15,7 +15,7 @@ public class MultiInoutPanel extends JPanel {
     private final ApiClient api = new ApiClient();
 
     private final JTextField billF = new JTextField(15);
-    private final JTextField dateF = new JTextField(LocalDate.now().toString(), 10);
+    private final DatePickerField dateF = new DatePickerField(LocalDate.now());
     private final JRadioButton inR  = new JRadioButton("进仓", true);
     private final JRadioButton outR = new JRadioButton("出仓");
     private final JTextField remarkF = new JTextField(20);

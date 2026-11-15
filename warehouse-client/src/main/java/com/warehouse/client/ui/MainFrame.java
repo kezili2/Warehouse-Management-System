@@ -27,11 +27,12 @@ public class MainFrame extends JFrame {
         mb.add(sys);
         setJMenuBar(mb);
 
-        // ---- 3 个 Tab ----
+        // ---- 4 个 Tab：三大功能 + 记录查询 ----
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("物料档案管理",   new MaterialPanel());
         tabs.addTab("单物料进出仓",   new SingleInoutPanel());
         tabs.addTab("多物料进出仓",   new MultiInoutPanel());
+        tabs.addTab("进出仓记录查询", new RecordPanel());
         add(tabs, BorderLayout.CENTER);
 
         // ---- 状态栏 ----
